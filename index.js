@@ -43,7 +43,7 @@ const VERSION_PREFIX = `-WW${VERSION_STR}-`
  * @param {Object=} opts
  */
 class WebTorrent extends EventEmitter {
-  constructor (opts = {}) {
+  constructor(opts = {}) {
     super()
 
     if (typeof opts.peerId === 'string') {
@@ -155,18 +155,18 @@ class WebTorrent extends EventEmitter {
     }
   }
 
-  get downloadSpeed () { return this._downloadSpeed() }
+  get downloadSpeed() { return this._downloadSpeed() }
 
-  get uploadSpeed () { return this._uploadSpeed() }
+  get uploadSpeed() { return this._uploadSpeed() }
 
-  get progress () {
+  get progress() {
     const torrents = this.torrents.filter(torrent => torrent.progress !== 1)
     const downloaded = torrents.reduce((total, torrent) => total + torrent.downloaded, 0)
     const length = torrents.reduce((total, torrent) => total + (torrent.length || 0), 0) || 1
     return downloaded / length
   }
 
-  get ratio () {
+  get ratio() {
     const uploaded = this.torrents.reduce((total, torrent) => total + torrent.uploaded, 0)
     const received = this.torrents.reduce((total, torrent) => total + torrent.received, 0) || 1
     return uploaded / received
@@ -180,12 +180,12 @@ class WebTorrent extends EventEmitter {
    * @param  {string|Buffer|Object|Torrent} torrentId
    * @return {Torrent|null}
    */
-  get (torrentId) {
+  get(torrentId) {
     if (torrentId instanceof Torrent) {
       if (this.torrents.includes(torrentId)) return torrentId
     } else {
       let parsed
-      try { parsed = parseTorrent(torrentId) } catch (err) {}
+      try { parsed = parseTorrent(torrentId) } catch (err) { }
 
       if (!parsed) return null
       if (!parsed.infoHash) throw new Error('Invalid torrent identifier')
@@ -198,7 +198,7 @@ class WebTorrent extends EventEmitter {
   }
 
   // TODO: remove in v1
-  download (torrentId, opts, ontorrent) {
+  download(torrentId, opts, ontorrent) {
     console.warn('WebTorrent: client.download() is deprecated. Use client.add() instead')
     return this.add(torrentId, opts, ontorrent)
   }
@@ -209,7 +209,7 @@ class WebTorrent extends EventEmitter {
    * @param {Object} opts torrent-specific options
    * @param {function=} ontorrent called when the torrent is ready (has metadata)
    */
-  add (torrentId, opts = {}, ontorrent = () => {}) {
+  add(torrentId, opts = {}, ontorrent = () => { }) {
     if (this.destroyed) throw new Error('client is destroyed')
     if (typeof opts === 'function') [opts, ontorrent] = [{}, opts]
 
@@ -217,6 +217,7 @@ class WebTorrent extends EventEmitter {
       if (this.destroyed) return
       for (const t of this.torrents) {
         if (t.infoHash === torrent.infoHash && t !== torrent) {
+          console.log("here 1")
           torrent._destroy(new Error(`Cannot add duplicate torrent ${torrent.infoHash}`))
           return
         }
@@ -229,7 +230,7 @@ class WebTorrent extends EventEmitter {
       this.emit('torrent', torrent)
     }
 
-    function onClose () {
+    function onClose() {
       torrent.removeListener('_infoHash', onInfoHash)
       torrent.removeListener('ready', onReady)
       torrent.removeListener('close', onClose)
@@ -254,7 +255,7 @@ class WebTorrent extends EventEmitter {
    * @param  {Object=} opts
    * @param  {function=} onseed called when torrent is seeding
    */
-  seed (input, opts, onseed) {
+  seed(input, opts, onseed, onMakeTorrent) {
     if (this.destroyed) throw new Error('client is destroyed')
     if (typeof opts === 'function') [opts, onseed] = [{}, opts]
 
@@ -298,6 +299,7 @@ class WebTorrent extends EventEmitter {
     }
 
     const torrent = this.add(null, opts, onTorrent)
+    onMakeTorrent(torrent)
     let streams
 
     if (isFileList(input)) input = Array.from(input)
@@ -322,6 +324,7 @@ class WebTorrent extends EventEmitter {
 
           const existingTorrent = this.get(torrentBuf)
           if (existingTorrent) {
+            console.log("here 2")
             torrent._destroy(new Error(`Cannot add duplicate torrent ${existingTorrent.infoHash}`))
           } else {
             torrent._onTorrentId(torrentBuf)
@@ -338,7 +341,7 @@ class WebTorrent extends EventEmitter {
    * @param  {string|Buffer|Torrent}   torrentId
    * @param  {function} cb
    */
-  remove (torrentId, opts, cb) {
+  remove(torrentId, opts, cb) {
     if (typeof opts === 'function') return this.remove(torrentId, null, opts)
 
     this._debug('remove')
@@ -347,7 +350,7 @@ class WebTorrent extends EventEmitter {
     this._remove(torrentId, opts, cb)
   }
 
-  _remove (torrentId, opts, cb) {
+  _remove(torrentId, opts, cb) {
     if (typeof opts === 'function') return this._remove(torrentId, null, opts)
 
     const torrent = this.get(torrentId)
@@ -356,7 +359,7 @@ class WebTorrent extends EventEmitter {
     torrent.destroy(opts, cb)
   }
 
-  address () {
+  address() {
     if (!this.listening) return null
     return this._connPool
       ? this._connPool.tcpServer.address()
@@ -367,12 +370,12 @@ class WebTorrent extends EventEmitter {
    * Destroy the client, including all torrents and connections to peers.
    * @param  {function} cb
    */
-  destroy (cb) {
+  destroy(cb) {
     if (this.destroyed) throw new Error('client already destroyed')
     this._destroy(null, cb)
   }
 
-  _destroy (err, cb) {
+  _destroy(err, cb) {
     this._debug('client destroy')
     this.destroyed = true
 
@@ -401,7 +404,7 @@ class WebTorrent extends EventEmitter {
     this.dht = null
   }
 
-  _onListening () {
+  _onListening() {
     this._debug('listening')
     this.listening = true
 
@@ -414,7 +417,7 @@ class WebTorrent extends EventEmitter {
     this.emit('listening')
   }
 
-  _debug () {
+  _debug() {
     const args = [].slice.call(arguments)
     args[0] = `[${this._debugId}] ${args[0]}`
     debug(...args)
@@ -429,7 +432,7 @@ WebTorrent.VERSION = VERSION
  * @param  {*} obj
  * @return {boolean}
  */
-function isReadable (obj) {
+function isReadable(obj) {
   return typeof obj === 'object' && obj != null && typeof obj.pipe === 'function'
 }
 
@@ -438,7 +441,7 @@ function isReadable (obj) {
  * @param  {*} obj
  * @return {boolean}
  */
-function isFileList (obj) {
+function isFileList(obj) {
   return typeof FileList !== 'undefined' && obj instanceof FileList
 }
 
