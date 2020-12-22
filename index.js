@@ -45,6 +45,7 @@ const VERSION_PREFIX = `-WW${VERSION_STR}-`
 class WebTorrent extends EventEmitter {
   constructor(opts = {}) {
     super()
+    console.log("initing webtorrent👺")
 
     if (typeof opts.peerId === 'string') {
       this.peerId = opts.peerId
